@@ -20,8 +20,12 @@ offset_y = 0
 wind_source_active = False
 partickles = []
 dt = []
+dtr = []
+trails = []
 for i in range(400):
     dt.append(0)
+for i in range(400):
+    dtr.append(0)
 keeper = True
 simbuttontext = "Start Simulation"
 
@@ -39,7 +43,7 @@ buttonadfadf = Button(screen, 496, 10, 190, 40, text="Create Wind Source", onCli
 startsim = Button(screen, 10, 640, 150, 40, text=simbuttontext, onClick=lambda: srtat(), inactiveColour="white", shadowDistance=4, shadowColour="black")
 
 def srtat():
-    global simulation_runing, simbuttontext, startsim, partickles,dt
+    global simulation_runing, simbuttontext, startsim, partickles,dt,trails, dtr
     if wind_source_rect is None:
         print("please add a wind source to start")
         return
@@ -54,10 +58,14 @@ def srtat():
         print("sim stopped and reset")
         simulation_runing = False
         simbuttontext = "Start Simulation"  
+        trails = []
         partickles = []
         dt = []
         for i in range(400):
             dt.append(0)
+        dtr = []
+        for i in range(400):
+            dtr.append(0)
 
         if wind_source_rect is not None:
             creatparticles(wind_source_rect)
@@ -99,11 +107,7 @@ def fileman(dddd):
     global fileopen
     if not fileopen:
         filecreate = Button(dddd, 10, 57, 85, 33, text="New", onClick=lambda: reset(), inactiveColour="white", shadowDistance=4, shadowColour="black")
-        fileopenge = Button(dddd, 10, 96, 85, 40, text="Open", onClick=lambda: print("oepenened"), inactiveColour="white", shadowDistance=4, shadowColour="black")
-        savde = Button(dddd, 10, 140, 85, 47, text="Save", onClick=lambda: print("saved"), inactiveColour="white", shadowDistance=4, shadowColour="black")
         butotnf.append(filecreate)
-        butotnf.append(fileopenge)
-        butotnf.append(savde)
         fileopen = True
     else:
         for btn in butotnf:
@@ -112,7 +116,7 @@ def fileman(dddd):
         fileopen = False
 
 def reset():
-    global svg_surface, svg_rect, wind_source_rect, wintsourcerect_dragging, wind_source_active, running, asdaasd, dragging, offset_y, offset_x, partickles
+    global svg_surface, svg_rect, wind_source_rect, wintsourcerect_dragging, wind_source_active, running, asdaasd, dragging, offset_y, offset_x, partickles, trails
     wind_source_rect = None
     wintsourcerect_dragging = False
     wind_source_active = False
@@ -125,9 +129,16 @@ def reset():
     svg_surface = None
     svg_rect = None
     partickles = []
+    trails = []
     if fileopen:
         fileman(screen)
     
+def realorfakeman(surface, x, y):
+    try:
+        color = surface.get_at((x, y))
+        return color[0] == 0 and color[1] == 0 and color[2] == 0 and color[3] > 0
+    except IndexError:
+        return False
 
 def shapeman(dddd):
     global asdaasd
@@ -148,7 +159,15 @@ def importsvg():
     if fafialfe:
         original_surface = pygame.image.load(fafialfe).convert_alpha()
         target_size = (400, 400)
-        svg_surface = pygame.transform.smoothscale(original_surface, target_size)
+        scaled_surface = pygame.transform.smoothscale(original_surface, target_size)
+        silhouette = pygame.Surface(target_size, pygame.SRCALPHA)
+        silhouette.fill((0, 0, 0, 0))
+        for x in range(target_size[0]):
+            for y in range(target_size[1]):
+                color = scaled_surface.get_at((x, y))
+                if color[3] > 0:
+                    silhouette.set_at((x, y), (0, 0, 0, 255))
+        svg_surface = silhouette
         svg_rect = svg_surface.get_rect()
         svg_rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
@@ -164,14 +183,15 @@ while running:
         elif event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 if not simulation_runing:
-                    if svg_rect is not None and svg_rect.collidepoint(event.pos):
-                        dragging = True
-                        offset_x = svg_rect.x - event.pos[0]
-                        offset_y = svg_rect.y - event.pos[1]
-                    elif wind_source_rect is not None and wind_source_rect.collidepoint(event.pos):
+                    if wind_source_rect is not None and wind_source_rect.collidepoint(event.pos):
                         wintsourcerect_dragging = True
                         offset_x = wind_source_rect.x - event.pos[0]
                         offset_y = wind_source_rect.y - event.pos[1]
+                    elif svg_rect is not None and svg_rect.collidepoint(event.pos):
+                        dragging = True
+                        offset_x = svg_rect.x - event.pos[0]
+                        offset_y = svg_rect.y - event.pos[1]
+
         elif event.type == pygame.MOUSEBUTTONUP:
             if event.button == 1:
                 dragging = False
@@ -193,16 +213,41 @@ while running:
     if simulation_runing:
         updated_particles = []
         for idx, particle in enumerate(partickles):
+            oldX = particle[0]
+            oldY = particle[1]
             if not particle[0] > 700:
-                updated_particles.append([particle[0] + 10, particle[1]])
-                if dt[idx]+5 > 255:
-                    dt[idx] = 0
-                else:    
-                    dt[idx] = dt[idx]+5
+                if not realorfakeman(screen, particle[0]+6, particle[1]):
+                    updated_particles.append([particle[0] + 10, particle[1]])
+                    if dt[idx]+5 > 255:
+                        dt[idx] = dt[idx]
+                    else:    
+                        dt[idx] = dt[idx]+5
+                    if dtr[idx]+1 > 255:
+                        dtr[idx] = dtr[idx]
+                    else:    
+                        dtr[idx] = dtr[idx]+1
+                        
+                else:
+                    if realorfakeman(screen, particle[0], particle[1]+6):
+                        updated_particles.append([particle[0], particle[1]-2])
+                        if not dtr[idx]+5 > 255:
+                            dtr[idx] = dtr[idx]+20
+                    elif realorfakeman(screen, particle[0], particle[1]-6):
+                        updated_particles.append([particle[0], particle[1]+2])
+                        if not dtr[idx]+5 > 255:
+                            dtr[idx] = dtr[idx]+20
 
+                    
             else:
-                updated_particles.append([wind_source_rect.x + 40, particle[1]])
-                dt[idx] = 0
+                dt[idx] = dt[idx]
+                dtr[idx] = dtr[idx]
+            new = partickles[idx]
+            newX = new[0]
+            newY = new[1]
+            if dtr[idx] > 255:
+                dtr[idx] = 255
+
+            trails.append([[oldX, oldY], [newX, newY], dt[idx], dtr[idx]])
         partickles = updated_particles
     
     mx, my = pygame.mouse.get_pos()
@@ -217,8 +262,13 @@ while running:
         screen.blit(svg_surface, svg_rect)
     for i, particle in enumerate(partickles):
         disctance = dt[i]
-        pygame.draw.circle(screen, (disctance, 0, 0), (particle), 1)
+        pygame.draw.circle(screen, (disctance, 0, 0), (particle), 3)
+
+    for i, trail in enumerate(trails):
+        start_pos = trail[0]
+        end_pos = trail[1]
+
+        pygame.draw.line(screen, (trail[3], trail[2], 0), start_pos, end_pos , 10)
     pygame.display.flip()
     clock.tick(120)
-
 pygame.quit()

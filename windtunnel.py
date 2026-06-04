@@ -4,8 +4,10 @@ import pygame
 import pygame_widgets
 from pygame_widgets.button import Button 
 pygame.init()
-
+pygame.display.set_icon(pygame.image.load('icon.png'))
+pygame.display.set_caption("WintUnnel")
 wind_source_rect = None
+dragamount = "Run the simulation first!"
 wintsourcerect_dragging = False
 wind_source_active = False
 simulation_runing = False
@@ -17,6 +19,7 @@ svg_rect = None
 dragging = False
 offset_x = 0
 offset_y = 0
+blockingforce = 0
 wind_source_active = False
 partickles = []
 dt = []
@@ -43,7 +46,7 @@ buttonadfadf = Button(screen, 496, 10, 190, 40, text="Create Wind Source", onCli
 startsim = Button(screen, 10, 640, 150, 40, text=simbuttontext, onClick=lambda: srtat(), inactiveColour="white", shadowDistance=4, shadowColour="black")
 
 def srtat():
-    global simulation_runing, simbuttontext, startsim, partickles,dt,trails, dtr
+    global simulation_runing, simbuttontext, startsim, partickles,dt,trails, dtr, blockingforce
     if wind_source_rect is None:
         print("please add a wind source to start")
         return
@@ -54,6 +57,7 @@ def srtat():
         print("sim started")
         simulation_runing = True
         simbuttontext = "Stop Simulation"
+        blockingforce = 0
     else:
         print("sim stopped and reset")
         simulation_runing = False
@@ -175,6 +179,7 @@ def importsvg():
         pygame_widgets.WidgetHandler.removeWidget(btn)
     butotnf2.clear()
 
+blockingforce = 0
 while running:
     events = pygame.event.get()
     for event in events:
@@ -210,6 +215,7 @@ while running:
     if wind_source_rect is not None and not keeper and not simulation_runing:
         updaterrrasdsaparticles(wind_source_rect)
     #simulatisonfadf affda fd fad adf f d                   commentss are funny :D
+    
     if simulation_runing:
         updated_particles = []
         for idx, particle in enumerate(partickles):
@@ -228,14 +234,21 @@ while running:
                         dtr[idx] = dtr[idx]+1
                         
                 else:
+                    dtr[idx] = dtr[idx]+20
+                    blockingforce = blockingforce + 1
                     if realorfakeman(screen, particle[0], particle[1]+6):
-                        updated_particles.append([particle[0], particle[1]-2])
+                        updated_particles.append([particle[0], particle[1]-6])
+                        blockingforce = blockingforce + 1
                         if not dtr[idx]+5 > 255:
                             dtr[idx] = dtr[idx]+20
-                    elif realorfakeman(screen, particle[0], particle[1]-6):
-                        updated_particles.append([particle[0], particle[1]+2])
-                        if not dtr[idx]+5 > 255:
-                            dtr[idx] = dtr[idx]+20
+                            
+                    else:
+                        if realorfakeman(screen, particle[0], particle[1]-6):
+                            updated_particles.append([particle[0], particle[1]+6])
+                            blockingforce = blockingforce + 1
+                            if not dtr[idx]+5 > 255:
+                                dtr[idx] = dtr[idx]+20
+                            
 
                     
             else:
@@ -248,14 +261,19 @@ while running:
                 dtr[idx] = 255
 
             trails.append([[oldX, oldY], [newX, newY], dt[idx], dtr[idx]])
+            
         partickles = updated_particles
+        print(blockingforce * 0.0161290323)
+
+        
+        
     
     mx, my = pygame.mouse.get_pos()
     screen.fill("purple")
     if wind_source_active and wind_source_rect is not None:
         pygame.draw.rect(screen, "white", wind_source_rect)
         
-
+    
     pygame_widgets.update(events)
 
     if svg_surface is not None and svg_rect is not None:
@@ -267,8 +285,13 @@ while running:
     for i, trail in enumerate(trails):
         start_pos = trail[0]
         end_pos = trail[1]
-
         pygame.draw.line(screen, (trail[3], trail[2], 0), start_pos, end_pos , 10)
+    pygame.font.init()
+    fontman = pygame.font.SysFont(None, 32)
+    adjofodafnoad = round(blockingforce * 0.0161290323, 1)
+    textmancool = fontman.render("Blocking Forces: " + str(adjofodafnoad) + "%", False, "white")
+    screen.blit(textmancool, (435,653))
+    pygame.display.update()
     pygame.display.flip()
     clock.tick(120)
 pygame.quit()

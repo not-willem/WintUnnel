@@ -16,4 +16,12 @@ run py windtunnel.py
 yay
 
 ## features
- - 
+ - svg loading
+ - new files and stuff
+ - cool simulation
+ - blocking forces percent (buggy!)
+ 
+# people who helped
+ - me
+ - myself
+ - i

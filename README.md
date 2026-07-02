@@ -1,7 +1,9 @@
 # WintUnnel
 
-A user friendly 2d wind tunnel
+this is a program that you can use to see how things react to wind
 
-made with pygame and willpower
+check it out [here](https://github.com/not-willem/WintUnnel/releases/tag/V1.0)
 
-and free time
+# how to run it without the pre-existing package
+
+download the [source code](https://github.com/not-willem/WintUnnel/releases/tag/V1.0) as a zip
